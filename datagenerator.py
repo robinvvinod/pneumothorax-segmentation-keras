@@ -49,6 +49,7 @@ class DataGenerator(Sequence):
         y = np.empty((self.batch_size, *self.dim, self.n_channels))
 
         for i, ID in enumerate(list_IDs_temp):
+
             # Write logic for selecting/manipulating X and y here
             img = pydicom.dcmread(ID).pixel_array
             img = np.reshape(img, (1, 1024, 1024, 1))
@@ -73,14 +74,13 @@ class DataGenerator(Sequence):
                             gt = gt + np.expand_dims(rle2mask(x, 1024, 1024), axis=2)
             except KeyError:
                 gt = np.zeros((1024, 1024, 1))  # Assume missing masks are empty masks.
-            
+
             gt = np.reshape(gt, (1, 1024, 1024, 1))
             gt = tf.convert_to_tensor(gt, dtype=tf.uint8)
             gt_patches = tf.image.extract_patches(gt, sizes, strides, rates, padding="VALID")
             gt_patches = np.reshape(gt_patches, (64, 128, 128, 1))
-    
-            for j in range(64):
-                X[j, ] = img_patches[j,:,:,:]
-                y[j, ] = gt_patches[j,:,:,:]
+
+            X = img_patches
+            y = gt_patches
 
         return X, y
