@@ -19,7 +19,7 @@ class DataGenerator(Sequence):
         self.on_epoch_end()
 
         # Reading CSV file for RLEs
-        self.rles = pd.read_csv("../input/pneumothoraxfiles/siim/train-rle.csv")
+        self.rles = pd.read_csv("../input/siim-train-test/train-rle.csv")
 
     def __len__(self):
         return len(self.list_IDs)

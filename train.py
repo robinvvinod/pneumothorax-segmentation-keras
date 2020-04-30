@@ -44,7 +44,7 @@ print('Memory Footprint/GPU: ' + str(memory_usage(1, model)) + 'GB')
 # Training
 ################################################################################
 
-train_glob = "../input/pneumothoraxfiles/siim/dicom-images-train/*/*/*.dcm"
+train_glob = "../input/siim-train-test/dicom-images-train/*/*/*.dcm"
 list_IDs = glob.glob(train_glob)
 
 train_gen = DataGenerator(list_IDs=list_IDs, dim=dimensions, batch_size=batch_size, shuffle=True)
