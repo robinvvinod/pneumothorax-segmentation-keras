@@ -10,40 +10,40 @@ def network(input_img, n_filters=16, dropout=0.5, batchnorm=True):
 
     # contracting path
     
-    c0 = inception_block(input_img, n_filters=n_filters, batchnorm=batchnorm, strides=1, recurrent=2, layers=((3,2),(5,1)))  # 64x64
+    c0 = residual_block(input_img, n_filters=n_filters, batchnorm=batchnorm, strides=1, recurrent=2)
     p0 = SpatialDropout2D(dropout * 0.5)(c0)
 
-    c1 = inception_block(p0, n_filters=n_filters * 2, batchnorm=batchnorm, strides=2, recurrent=2, layers=((3,2),(5,1)))  # 32x32
+    c1 = residual_block(p0, n_filters=n_filters * 2, batchnorm=batchnorm, strides=2, recurrent=2)
     p1 = SpatialDropout2D(dropout)(c1)
 
-    c2 = inception_block(p1, n_filters=n_filters * 4, batchnorm=batchnorm, strides=2, recurrent=2, layers=((3,2),(5,1)))  # 16x16
+    c2 = residual_block(p1, n_filters=n_filters * 4, batchnorm=batchnorm, strides=2, recurrent=2)
     p2 = SpatialDropout2D(dropout)(c2)
 
-    c3 = inception_block(p2, n_filters=n_filters * 8, batchnorm=batchnorm, strides=1, recurrent=2, layers=((3,2),(5,1)))  # 16x16
+    c3 = residual_block(p2, n_filters=n_filters * 8, batchnorm=batchnorm, strides=1, recurrent=2)
     p3 = SpatialDropout2D(dropout)(c3)
     
     # bridge
     
-    b0 = inception_block(p3, n_filters=n_filters * 16, batchnorm=batchnorm, strides=2, recurrent=2, layers=((3,2),(5,1)))  # 8x8
+    b0 = residual_block(p3, n_filters=n_filters * 16, batchnorm=batchnorm, strides=2, recurrent=2)
 
     # expansive path
     
     gating = UnetGatingSignal(b0, batchnorm=batchnorm)
     attn0 = AttnGatingBlock(p3, gating, n_filters * 16)
-    u0 = transpose_block(b0, attn0, n_filters=n_filters * 8)  # 16x16
+    u0 = transpose_block(b0, attn0, n_filters=n_filters * 8)
     d0 = SpatialDropout2D(dropout)(u0)
     
     gating = UnetGatingSignal(d0, batchnorm=batchnorm)
     attn1 = AttnGatingBlock(p2, gating, n_filters * 8)
-    u1 = transpose_block(d0, attn1, n_filters=n_filters * 4)  # 16x16
+    u1 = transpose_block(d0, attn1, n_filters=n_filters * 4)
     d1 = SpatialDropout2D(dropout)(u1)
     
     gating = UnetGatingSignal(d1, batchnorm=batchnorm)
     attn2 = AttnGatingBlock(p1, gating, n_filters * 4)
-    u2 = transpose_block(d1, attn2, n_filters=n_filters * 2)  # 32x32
+    u2 = transpose_block(d1, attn2, n_filters=n_filters * 2)
     d2 = SpatialDropout2D(dropout)(u2)
     
-    u3 = transpose_block(d2, p0, n_filters=n_filters)  # 64x64
+    u3 = transpose_block(d2, p0, n_filters=n_filters)  
     d3 = SpatialDropout2D(dropout)(u3)
 
     outputs = Conv2D(filters=1, kernel_size=1, strides=1, activation='sigmoid')(d3)
