@@ -3,6 +3,7 @@ import matplotlib as plt
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from mask_functions import rle2mask
 
 ID = "path/to/file"
 img = pydicom.dcmread(ID).pixel_array

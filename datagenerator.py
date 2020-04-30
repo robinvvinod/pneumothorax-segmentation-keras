@@ -19,7 +19,8 @@ class DataGenerator(Sequence):
         self.on_epoch_end()
 
         # Reading CSV file for RLEs
-        self.rles = pd.read_csv("../input/siim-train-test/train-rle.csv")
+        # self.rles = pd.read_csv("../input/siim-train-test/train-rle.csv")
+        self.rles = pd.read_csv("siim/train-rle.csv")
 
     def __len__(self):
         return len(self.list_IDs)
@@ -79,8 +80,13 @@ class DataGenerator(Sequence):
             gt = tf.convert_to_tensor(gt, dtype=tf.uint8)
             gt_patches = tf.image.extract_patches(gt, sizes, strides, rates, padding="VALID")
             gt_patches = np.reshape(gt_patches, (64, 128, 128, 1))
+            gt_patches = np.where(gt_patches == 255, 1, 0)
 
-            X = img_patches
-            y = gt_patches
+            if np.random.randint(0,2) == 1:
+                X = img_patches[0:32,:,:,:]
+                y = gt_patches[0:32,:,:,:]
+            else:
+                X = img_patches[32:64,:,:,:]
+                y = gt_patches[32:64,:,:,:]
 
         return X, y
