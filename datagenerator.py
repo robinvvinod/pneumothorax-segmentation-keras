@@ -19,14 +19,17 @@ class DataGenerator(Sequence):
         self.on_epoch_end()
 
         # Reading CSV file for RLEs
-        self.rles = pd.read("../input/siim/train-rle.csv")
+        self.rles = pd.read_csv("../input/pneumothoraxfiles/siim/train-rle.csv")
 
     def __len__(self):
-        return int(np.floor(len(self.list_IDs) / self.batch_size))
+        return len(self.list_IDs)
 
     def __getitem__(self, index):
 
-        indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
+        # This was modified to stop list_IDs_temp coming from n=batch_size different files but rather treat each patch
+        # as one batch, all from the same file
+
+        indexes = self.indexes[index:index+1]
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
         X, y = self.__data_generation(list_IDs_temp)
@@ -49,27 +52,35 @@ class DataGenerator(Sequence):
             # Write logic for selecting/manipulating X and y here
             img = pydicom.dcmread(ID).pixel_array
             img = np.reshape(img, (1, 1024, 1024, 1))
-            img = tf.convert_to_tensor(img, dtype=tf.float16)
-            ksizes = [1, 64, 64, 1]
-            strides = [1, 64, 64, 1]  # how far the centres of two patches must be --> overlap area
+            img = tf.convert_to_tensor(img, dtype=tf.uint8)
+            sizes = [1, 128, 128, 1]
+            strides = [1, 128, 128, 1]  # how far the centres of two patches must be --> overlap area
             rates = [1, 1, 1, 1]  # dilation rate of patches
-            img_patches = tf.extract_image_patches(img, ksizes, strides, rates, padding="SAME")
-            
+            img_patches = tf.image.extract_patches(img, sizes, strides, rates, padding="VALID")
+            img_patches = np.reshape(img_patches, (64, 128, 128, 1))
+
+            ID = ID.split("/")[-1]
             try:
                 locPD = self.rles.loc[ID.split('/')[-1][:-4], 'EncodedPixels']  # EncodedPixels data from CSV based on ID lookup
+                if '-1' in locPD:
+                    gt = np.zeros((1024, 1024, 1))
+                else:
+                    if type(locPD) == str:
+                        gt = np.expand_dims(rle2mask(locPD, 1024, 1024), axis=2)
+                    else:
+                        gt = np.zeros((1024, 1024, 1))
+                        for x in locPD:
+                            gt = gt + np.expand_dims(rle2mask(x, 1024, 1024), axis=2)
             except KeyError:
                 gt = np.zeros((1024, 1024, 1))  # Assume missing masks are empty masks.
-
-            if '-1' in locPD:
-                gt = np.zeros((1024, 1024, 1))
-            else:
-                if type(locPD) == str:
-                    gt = np.expand_dims(rle2mask(locPD, 1024, 1024), axis=2)
-                else:
-                    gt = np.zeros((1024, 1024, 1))
-                    for x in locPD:
-                        gt = gt + np.expand_dims(rle2mask(x, 1024, 1024), axis=2)
             
-            print(img_patches.shape)
+            gt = np.reshape(gt, (1, 1024, 1024, 1))
+            gt = tf.convert_to_tensor(gt, dtype=tf.uint8)
+            gt_patches = tf.image.extract_patches(gt, sizes, strides, rates, padding="VALID")
+            gt_patches = np.reshape(gt_patches, (64, 128, 128, 1))
+    
+            for j in range(64):
+                X[i, ] = img_patches[j,:,:,:]
+                y[i, ] = gt_patches[j,:,:,:]
 
         return X, y
