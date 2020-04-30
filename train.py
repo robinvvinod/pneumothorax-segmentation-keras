@@ -1,6 +1,6 @@
 # yapf: disable
 import sys
-sys.path.append("")
+sys.path.append("../input/pneumothoraxfiles")
 import os
 import tensorflow as tf
 from keras.layers import Input

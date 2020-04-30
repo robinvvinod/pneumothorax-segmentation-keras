@@ -80,7 +80,7 @@ class DataGenerator(Sequence):
             gt_patches = np.reshape(gt_patches, (64, 128, 128, 1))
     
             for j in range(64):
-                X[i, ] = img_patches[j,:,:,:]
-                y[i, ] = gt_patches[j,:,:,:]
+                X[j, ] = img_patches[j,:,:,:]
+                y[j, ] = gt_patches[j,:,:,:]
 
         return X, y
