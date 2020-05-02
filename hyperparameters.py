@@ -12,9 +12,6 @@ alpha = 0.1
 input_dimensions = (128,128,1)
 dimensions = (128,128)
 
-# Dropout probability
-dropout = 0.5
-
 # Training parameters
 num_initial_filters = 32
 batchnorm = True
